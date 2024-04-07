@@ -208,6 +208,7 @@ func outputFilename(filename, suffix string) string {
 
 func (g *Generator) Generate(linkOpenLib bool) ([]*File, error) {
 	var files []*File
+	var usedPlatforms []string
 
 	g.platforms = map[string]struct{}{}
 	g.symbolsByLibrary = map[*Library][]string{}
@@ -230,13 +231,13 @@ func (g *Generator) Generate(linkOpenLib bool) ([]*File, error) {
 	if len(g.platforms) == 0 {
 		return nil, fmt.Errorf("generate: no OS specified")
 	}
+	for p := range g.platforms {
+		usedPlatforms = append(usedPlatforms, p)
+	}
 
 	// Functions implementations file
 	f := jen.NewFile(g.pkg)
-	buildComment := "//go:build"
-	for p := range g.platforms {
-		buildComment += " " + p
-	}
+	buildComment := "//go:build " + strings.Join(usedPlatforms, " || ")
 	f.Comment(buildComment)
 	// Imports
 	for _, imp := range g.imports {
