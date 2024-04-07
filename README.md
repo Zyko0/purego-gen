@@ -23,8 +23,8 @@ There are a few custom directives starting with `//puregogen:` such as:
 - `//puregogen:function symbol=clCreateDevice`
   - `symbol` allows to set the symbol for the function below it if it is not named after the symbol already
 
-There is a partial example about opencl in the [examples](./examples) directory, [examples/functions.go] is the input file.
-And the [examples/functions_impl.go] is generated via `go run cmd/purego-gen --input ./examples/functions.go`
+There is a partial example about opencl in the [examples](./examples) directory, [examples/functions.go](./examples/functions.go) is the input file.
+And the [examples/functions_impl.go](./examples/functions_impl.go) is generated via `go run cmd/purego-gen --input ./examples/functions.go`
 
 ```
 Usage of purego-gen:
