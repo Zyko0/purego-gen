@@ -46,3 +46,5 @@ Usage of purego-gen:
   - [ ] floats
   - [ ] structs
   - [ ] functions returned
+
+Note: floats and structs are supported using `purego.RegisterLibFunc` as a fallback.

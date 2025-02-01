@@ -216,6 +216,10 @@ func (g *Generator) Generate(linkOpenLib bool) ([]*File, error) {
 
 	// Initialize platforms, libraries and symbols
 	for _, fn := range g.funcs {
+		// Skip functions that won't be call by purego.Syscall
+		if fn.NeedsRegisterFunc {
+			continue
+		}
 		if _, ok := g.symbolsByLibrary[fn.Library]; !ok {
 			g.symbolsByLibrary[fn.Library] = []string{fn.Symbol}
 		} else {
@@ -331,6 +335,18 @@ func (g *Generator) Generate(linkOpenLib bool) ([]*File, error) {
 	// Init
 	var funcs []jen.Code
 	for _, fn := range g.funcs {
+		// RegisterFunc quick path
+		if fn.NeedsRegisterFunc {
+			regFunc := jen.Qual(puregoQual, "RegisterLibFunc").Call(
+				jen.Op("&").Id(fn.Symbol),
+				jen.Id(libHndVarName(fn.Library.Alias)),
+				jen.Lit(fn.Symbol),
+			)
+			funcs = append(funcs, regFunc)
+			continue
+		}
+
+		// Syscall function call
 		var params []jen.Code
 		var callParams []jen.Code
 		var returnTypes []jen.Code

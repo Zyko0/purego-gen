@@ -23,15 +23,19 @@ var (
 	}
 	typesLookup           = make(map[Type]struct{}, len(types))
 	unsupportedParamTypes = map[Type]struct{}{
-		"float32": {},
-		"float64": {},
-		"struct":  {},
+		"struct": {},
 	}
 	unsupportedReturnTypes = map[Type]struct{}{
+		"struct": {},
+	}
+	noGenParamTypes = map[Type]struct{}{
 		"float32": {},
 		"float64": {},
-		"func":    {}, // TODO: func could be supported via RegisterFunc
-		"struct":  {},
+	}
+	noGenReturnTypes = map[Type]struct{}{
+		"float32": {},
+		"float64": {},
+		"func":    {},
 	}
 	platforms = []string{"windows", "darwin", "linux", "freebsd"}
 )
@@ -60,6 +64,9 @@ type Func struct {
 	Symbol     string
 	ParamArgs  []*FuncArg
 	ReturnArgs []*FuncArg
+	// NeedsRegisterFunc tells if the generated code will need purego.RegisterFunc instead
+	// of the syscall declaration (e.g: if floats are used)
+	NeedsRegisterFunc bool
 }
 
 type state struct {
@@ -130,6 +137,7 @@ func (p *Parser) parseOrigType(t ast.Expr) string {
 		}
 		return ret
 	case *ast.MapType, *ast.StructType, *ast.ChanType, *ast.InterfaceType:
+		p.errors = append(p.errors, p.error(t, "unsupported type"))
 		return ""
 	case fmt.Stringer:
 		return tt.String()
@@ -159,8 +167,7 @@ func (p *Parser) parseType(t ast.Expr) Type {
 		ret := Type(tt.String())
 		switch ret {
 		case "float32", "float64":
-			p.errors = append(p.errors, p.error(t, fmt.Sprintf("unsupported float type: %v", ret)))
-			return ""
+			p.warnings = append(p.warnings, p.warn(t, fmt.Sprintf("unsupported float type: %v", ret)))
 		}
 		return ret
 	default:
@@ -237,6 +244,12 @@ func (p *Parser) parseFunc(vs *ast.ValueSpec) *Func {
 			return nil
 		}
 		fn.ParamArgs = append(fn.ParamArgs, args...)
+		// Mark as not syscall-generable if necessary
+		for _, arg := range args {
+			if _, ok := noGenParamTypes[arg.Type]; ok {
+				fn.NeedsRegisterFunc = true
+			}
+		}
 		// Return value
 		args = p.parseFuncArgs(vt.Results)
 		if len(p.errors) > 0 {
@@ -245,6 +258,12 @@ func (p *Parser) parseFunc(vs *ast.ValueSpec) *Func {
 		if len(args) > 3 {
 			p.errors = append(p.errors, p.error(vs, "functions must not have more than 3 return values"))
 			return nil
+		}
+		// Mark as not syscall-generable if necessary
+		for _, arg := range args {
+			if _, ok := noGenReturnTypes[arg.Type]; ok {
+				fn.NeedsRegisterFunc = true
+			}
 		}
 		for _, a := range args {
 			if _, ok := unsupportedReturnTypes[a.Type]; ok {
