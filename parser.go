@@ -393,19 +393,21 @@ func (p *Parser) parseDirective(c *ast.Comment) {
 }
 
 type Parser struct {
-	filename  string
-	fset      *token.FileSet
-	libraries map[string]*Library
-	warnings  []error
-	errors    []error
+	filename   string
+	extrafiles []string
+	fset       *token.FileSet
+	libraries  map[string]*Library
+	warnings   []error
+	errors     []error
 
 	state state
 }
 
-func NewParser(filename string) *Parser {
+func NewParser(filename string, extrafiles ...string) *Parser {
 	return &Parser{
-		filename:  filename,
-		libraries: map[string]*Library{},
+		filename:   filename,
+		extrafiles: extrafiles,
+		libraries:  map[string]*Library{},
 
 		state: state{
 			handledComments: map[token.Pos]struct{}{},
@@ -414,85 +416,90 @@ func NewParser(filename string) *Parser {
 }
 
 func (p *Parser) Parse() (*Generator, error) {
-	p.fset = token.NewFileSet()
-	root, err := parser.ParseFile(p.fset, p.filename, nil, parser.ParseComments)
-	if err != nil {
-		return nil, errors.New("parser: " + err.Error())
-	}
-
 	g := &Generator{
 		filename: p.filename,
-		pkg:      root.Name.Name,
 		types:    map[string]Type{},
 	}
-	// Traverse tree
-	ast.Inspect(root, func(n ast.Node) bool {
-		if err != nil {
-			return false
-		}
-		if n == nil {
-			return true
-		}
-		switch tn := n.(type) {
-		case *ast.ImportSpec:
-			imp := &Import{
-				Path: tn.Path.Value,
-			}
-			if tn.Name != nil {
-				imp.Name = tn.Name.Name
-			}
-			g.imports = append(g.imports, imp)
-		case *ast.TypeSpec:
-			var _type Type
-			_type = p.parseType(tn.Type)
-			if len(p.errors) > 0 {
-				return false
-			}
-			g.types[tn.Name.Name] = _type
-		case *ast.ValueSpec:
-			// If comment is right above a function variable
-			if tn.Doc != nil {
-				for _, c := range tn.Doc.List {
-					p.parseDirective(c)
-				}
-				if len(p.errors) > 0 {
-					return false
-				}
-			}
-			// if comment is inside the var block at a random location
-			if tn.Comment != nil {
-				for _, c := range tn.Comment.List {
-					p.parseDirective(c)
-				}
-				if len(p.errors) > 0 {
-					return false
-				}
-			}
-			fn := p.parseFunc(tn)
-			if len(p.errors) > 0 {
-				return false
-			}
-			if fn != nil {
-				g.funcs = append(g.funcs, fn)
-			}
-		case *ast.Comment:
-			p.parseDirective(tn)
-			if len(p.errors) > 0 {
-				return false
-			}
-		case *ast.CommentGroup:
-			for _, c := range tn.List {
-				p.parseDirective(c)
-			}
-			if len(p.errors) > 0 {
-				return false
-			}
-		default:
 
-			// Nope
+	for _, filename := range append([]string{p.filename}, p.extrafiles...) {
+		p.fset = token.NewFileSet()
+		p.filename = filename
+		root, err := parser.ParseFile(p.fset, p.filename, nil, parser.ParseComments)
+		if err != nil {
+			return nil, errors.New("parser: " + err.Error())
 		}
-		return true
-	})
+		// Set package
+		g.pkg = root.Name.Name
+
+		// Traverse tree
+		ast.Inspect(root, func(n ast.Node) bool {
+			if err != nil {
+				return false
+			}
+			if n == nil {
+				return true
+			}
+			switch tn := n.(type) {
+			case *ast.ImportSpec:
+				imp := &Import{
+					Path: tn.Path.Value,
+				}
+				if tn.Name != nil {
+					imp.Name = tn.Name.Name
+				}
+				g.imports = append(g.imports, imp)
+			case *ast.TypeSpec:
+				var _type Type
+				_type = p.parseType(tn.Type)
+				if len(p.errors) > 0 {
+					return false
+				}
+				g.types[tn.Name.Name] = _type
+			case *ast.ValueSpec:
+				// If comment is right above a function variable
+				if tn.Doc != nil {
+					for _, c := range tn.Doc.List {
+						p.parseDirective(c)
+					}
+					if len(p.errors) > 0 {
+						return false
+					}
+				}
+				// if comment is inside the var block at a random location
+				if tn.Comment != nil {
+					for _, c := range tn.Comment.List {
+						p.parseDirective(c)
+					}
+					if len(p.errors) > 0 {
+						return false
+					}
+				}
+				fn := p.parseFunc(tn)
+				if len(p.errors) > 0 {
+					return false
+				}
+				if fn != nil {
+					g.funcs = append(g.funcs, fn)
+				}
+			case *ast.Comment:
+				p.parseDirective(tn)
+				if len(p.errors) > 0 {
+					return false
+				}
+			case *ast.CommentGroup:
+				for _, c := range tn.List {
+					p.parseDirective(c)
+				}
+				if len(p.errors) > 0 {
+					return false
+				}
+			default:
+
+				// Nope
+			}
+			return true
+		})
+	}
 	if len(p.errors) > 0 {
 		return nil, fmt.Errorf("parser: %d error(s) encountered", len(p.errors))
 	}
