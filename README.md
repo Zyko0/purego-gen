@@ -34,6 +34,8 @@ Usage of purego-gen:
         Generate a single file by linking unexported loading methods from ebitengine/purego
   --input string
         The input .go file to parse
+  --extra string
+        An optional list of comma separated .go files to parse for definitions
   --no-warnings
         Prevent printing warnings to sderr
   --platforms string

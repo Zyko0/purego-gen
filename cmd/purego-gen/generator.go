@@ -1,4 +1,4 @@
-package puregogen
+package main
 
 import (
 	"fmt"
@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	puregoQual = "github.com/ebitengine/purego"
+	puregoQual    = "github.com/ebitengine/purego"
+	puregogenQual = "github.com/Zyko0/purego-gen"
 )
 
 type Generator struct {
@@ -46,7 +47,7 @@ func (g *Generator) appendArgsConv(codes []jen.Code, arg *FuncArg) []jen.Code {
 	case "bool":
 		codes = append(codes, stmt.Uintptr().Parens(jen.Id("0")))
 		codes = append(codes, jen.If(rname).Block(
-			jen.Id(argCallName(arg)).Op("=").Id("1"),
+			jen.Id(argCallName(arg)).Op("!=").Id("0"),
 		))
 	case "[]T", "[N]T":
 		codes = append(codes, stmt.Uintptr().Parens(
@@ -57,7 +58,7 @@ func (g *Generator) appendArgsConv(codes []jen.Code, arg *FuncArg) []jen.Code {
 	case "string":
 		// Append a null byte to the string if necessary (to convert to a C string)
 		codes = append(codes, jen.If(
-			jen.Qual("strings", "HasSuffix").Call(
+			jen.Op("!").Qual("strings", "HasSuffix").Call(
 				jen.Id(arg.Name),
 				jen.Id("\"\\x00\""),
 			).Block(
@@ -67,10 +68,10 @@ func (g *Generator) appendArgsConv(codes []jen.Code, arg *FuncArg) []jen.Code {
 		codes = append(codes, stmt.
 			Uintptr().
 			Parens(
-				jen.Qual("unsafe", "Pointer").Parens(jen.Op("&").
-					Index().Byte().
-					Parens(jen.Id(arg.Name)).
-					Index(jen.Id("0")),
+				jen.Qual("unsafe", "Pointer").Parens(
+					jen.Qual(puregogenQual, "BytePtrFromString").Call(
+						jen.Id(arg.Name),
+					),
 				),
 			),
 		)
@@ -85,7 +86,8 @@ func (g *Generator) appendArgsConv(codes []jen.Code, arg *FuncArg) []jen.Code {
 			strings.HasPrefix(_type, "int"),
 			_type == "unsafe.Pointer",
 			_type == "rune",
-			_type == "byte":
+			_type == "byte",
+			_type == "struct":
 			codes = append(codes, stmt.Uintptr().Parens(rname))
 		default:
 			g.errors = append(g.errors, fmt.Errorf("unsupported type: %s", _type))
@@ -119,7 +121,7 @@ func (g *Generator) appendRetsConv(codes []jen.Code, ret *FuncArg) ([]jen.Code, 
 			),
 		)
 	case "bool":
-		codes = append(codes, stmt.Id(ret.Name).Op("==").Id("1"))
+		codes = append(codes, stmt.Id(ret.Name).Op("!=").Id("0"))
 	case "[]T", "[N]T":
 		codes = append(codes, stmt.Uintptr().Parens(
 			jen.Qual("unsafe", "Pointer").Parens(
@@ -127,26 +129,15 @@ func (g *Generator) appendRetsConv(codes []jen.Code, ret *FuncArg) ([]jen.Code, 
 			),
 		))
 	case "string":
-		codes = append(codes, jen.If(
-			jen.Qual("strings", "HasSuffix").Call(
-				jen.Id(ret.Name),
-				jen.Id("\"\\x00\""),
-			).Block(
-				jen.Id(ret.Name).Op("+=").Id("\"\\x00\""),
-			),
-		))
 		codes = append(codes,
-			stmt.Id("&").Parens(
-				jen.Op("*").Parens(
-					jen.Op("*").Index().Id("byte"),
-				).Parens(
-					jen.Qual("unsafe", "Pointer").Parens(
+			stmt.Lit("").Op("+").Qual(puregogenQual, "BytePtrToString").Call(
+				jen.Op("*").Parens(jen.Op("**").Byte()).Parens(
+					jen.Qual("unsafe", "Pointer").Call(
 						jen.Op("&").Id(ret.Name),
 					),
 				),
-			).Index(jen.Id("0")),
+			),
 		)
-		codes = append(codes, jen.Defer().Qual("runtime", "KeepAlive").Call(jen.Id(argCallName(ret))))
 	case "func":
 		codes = append(codes, stmt.Add(
 			jen.Qual(puregoQual, "NewCallBack").Call(rname),
@@ -157,7 +148,8 @@ func (g *Generator) appendRetsConv(codes []jen.Code, ret *FuncArg) ([]jen.Code, 
 			strings.HasPrefix(_type, "int"),
 			_type == "unsafe.Pointer",
 			_type == "rune",
-			_type == "byte":
+			_type == "byte",
+			_type == "struct":
 			codes = append(codes, stmt.Id(ret.OrigType).Parens(rname))
 		default:
 			g.errors = append(g.errors, fmt.Errorf("unsupported type: %s", _type))
@@ -253,20 +245,6 @@ func (g *Generator) Generate(linkOpenLib bool) ([]*File, error) {
 	linkOpenLib = true
 	var initBody jen.Statement
 	if linkOpenLib {
-		// Linking
-		f.Commentf("//go:linkname openLibrary github.com/ebitengine/purego.openLibrary")
-		f.Func().Id("openLibrary").Params(jen.Id("name").String()).Params(
-			jen.Uintptr(), jen.Error(),
-		)
-		f.Commentf("//go:linkname loadSymbol github.com/ebitengine/purego.loadSymbol")
-		f.Func().Id("loadSymbol").
-			Params(
-				jen.Id("handle").Uintptr(),
-				jen.Id("name").String(),
-			).
-			Params(
-				jen.Uintptr(), jen.Error(),
-			)
 		// Library handles
 		initBody.Add(jen.Var().Err().Error())
 		initBody.Add(jen.Var().Id("path").String())
@@ -293,9 +271,9 @@ func (g *Generator) Generate(linkOpenLib bool) ([]*File, error) {
 			initBody.Add(jen.List(
 				jen.Id(libHndVarName(l.Alias)),
 				jen.Id("err"),
-			).Op("=").Id("openLibrary").Call(jen.Id("path")))
+			).Op("=").Qual(puregogenQual, "OpenLibrary").Call(jen.Id("path")))
 			initBody.If(jen.Err().Op("!=").Nil().Block(
-				jen.Panic(jen.Id("\"cannot openLibrary: \"").Op("+").Id("path")),
+				jen.Panic(jen.Id("\"cannot puregogen.OpenLibrary: \"").Op("+").Id("path")),
 			))
 			// Symbols handles
 			initBody.Commentf("Symbols %s", l.Alias)
@@ -303,12 +281,12 @@ func (g *Generator) Generate(linkOpenLib bool) ([]*File, error) {
 				initBody.Add(jen.List(
 					jen.Id(symbolVarName(symbol)),
 					jen.Id("err"),
-				).Op("=").Id("loadSymbol").Call(
+				).Op("=").Qual(puregogenQual, "OpenSymbol").Call(
 					jen.Id(libHndVarName(l.Alias)),
 					jen.Id("\""+symbol+"\"")),
 				)
 				initBody.If(jen.Err().Op("!=").Nil().Block(
-					jen.Panic(jen.Id("\"cannot loadSymbol: " + symbol + "\"")),
+					jen.Panic(jen.Id("\"cannot puregogen.OpenSymbol: " + symbol + "\"")),
 				))
 			}
 			initBody.Line()

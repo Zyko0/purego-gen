@@ -3,23 +3,19 @@
 package examples
 
 import (
+	puregogen "github.com/Zyko0/purego-gen"
 	purego "github.com/ebitengine/purego"
 	"runtime"
 	"strings"
 	"unsafe"
 )
 
-//go:linkname openLibrary github.com/ebitengine/purego.openLibrary
-func openLibrary(name string) (uintptr, error)
-
-//go:linkname loadSymbol github.com/ebitengine/purego.loadSymbol
-func loadSymbol(handle uintptr, name string) (uintptr, error)
-
 var (
 	// Library handles
 	_hnd_cl uintptr
 	// Symbols
 	// cl
+	_addr_clStr                              uintptr
 	_addr_clGetPlatformIDs                   uintptr
 	_addr_clGetPlatformInfo                  uintptr
 	_addr_clGetDeviceIDs                     uintptr
@@ -65,132 +61,146 @@ func init() {
 	default:
 		panic("os not supported: " + runtime.GOOS)
 	}
-	_hnd_cl, err = openLibrary(path)
+	_hnd_cl, err = puregogen.OpenLibrary(path)
 	if err != nil {
-		panic("cannot openLibrary: " + path)
+		panic("cannot puregogen.OpenLibrary: " + path)
 	}
 	// Symbols cl
-	_addr_clGetPlatformIDs, err = loadSymbol(_hnd_cl, "clGetPlatformIDs")
+	_addr_clStr, err = puregogen.OpenSymbol(_hnd_cl, "clStr")
 	if err != nil {
-		panic("cannot loadSymbol: clGetPlatformIDs")
+		panic("cannot puregogen.OpenSymbol: clStr")
 	}
-	_addr_clGetPlatformInfo, err = loadSymbol(_hnd_cl, "clGetPlatformInfo")
+	_addr_clGetPlatformIDs, err = puregogen.OpenSymbol(_hnd_cl, "clGetPlatformIDs")
 	if err != nil {
-		panic("cannot loadSymbol: clGetPlatformInfo")
+		panic("cannot puregogen.OpenSymbol: clGetPlatformIDs")
 	}
-	_addr_clGetDeviceIDs, err = loadSymbol(_hnd_cl, "clGetDeviceIDs")
+	_addr_clGetPlatformInfo, err = puregogen.OpenSymbol(_hnd_cl, "clGetPlatformInfo")
 	if err != nil {
-		panic("cannot loadSymbol: clGetDeviceIDs")
+		panic("cannot puregogen.OpenSymbol: clGetPlatformInfo")
 	}
-	_addr_clGetDeviceInfo, err = loadSymbol(_hnd_cl, "clGetDeviceInfo")
+	_addr_clGetDeviceIDs, err = puregogen.OpenSymbol(_hnd_cl, "clGetDeviceIDs")
 	if err != nil {
-		panic("cannot loadSymbol: clGetDeviceInfo")
+		panic("cannot puregogen.OpenSymbol: clGetDeviceIDs")
 	}
-	_addr_clCreateContext, err = loadSymbol(_hnd_cl, "clCreateContext")
+	_addr_clGetDeviceInfo, err = puregogen.OpenSymbol(_hnd_cl, "clGetDeviceInfo")
 	if err != nil {
-		panic("cannot loadSymbol: clCreateContext")
+		panic("cannot puregogen.OpenSymbol: clGetDeviceInfo")
 	}
-	_addr_clReleaseContext, err = loadSymbol(_hnd_cl, "clReleaseContext")
+	_addr_clCreateContext, err = puregogen.OpenSymbol(_hnd_cl, "clCreateContext")
 	if err != nil {
-		panic("cannot loadSymbol: clReleaseContext")
+		panic("cannot puregogen.OpenSymbol: clCreateContext")
 	}
-	_addr_clCreateProgramWithSource, err = loadSymbol(_hnd_cl, "clCreateProgramWithSource")
+	_addr_clReleaseContext, err = puregogen.OpenSymbol(_hnd_cl, "clReleaseContext")
 	if err != nil {
-		panic("cannot loadSymbol: clCreateProgramWithSource")
+		panic("cannot puregogen.OpenSymbol: clReleaseContext")
 	}
-	_addr_clCreateBuffer, err = loadSymbol(_hnd_cl, "clCreateBuffer")
+	_addr_clCreateProgramWithSource, err = puregogen.OpenSymbol(_hnd_cl, "clCreateProgramWithSource")
 	if err != nil {
-		panic("cannot loadSymbol: clCreateBuffer")
+		panic("cannot puregogen.OpenSymbol: clCreateProgramWithSource")
 	}
-	_addr_clCreateImage2D, err = loadSymbol(_hnd_cl, "clCreateImage2D")
+	_addr_clCreateBuffer, err = puregogen.OpenSymbol(_hnd_cl, "clCreateBuffer")
 	if err != nil {
-		panic("cannot loadSymbol: clCreateImage2D")
+		panic("cannot puregogen.OpenSymbol: clCreateBuffer")
 	}
-	_addr_clCreateCommandQueue, err = loadSymbol(_hnd_cl, "clCreateCommandQueue")
+	_addr_clCreateImage2D, err = puregogen.OpenSymbol(_hnd_cl, "clCreateImage2D")
 	if err != nil {
-		panic("cannot loadSymbol: clCreateCommandQueue")
+		panic("cannot puregogen.OpenSymbol: clCreateImage2D")
 	}
-	_addr_clCreateCommandQueueWithProperties, err = loadSymbol(_hnd_cl, "clCreateCommandQueueWithProperties")
+	_addr_clCreateCommandQueue, err = puregogen.OpenSymbol(_hnd_cl, "clCreateCommandQueue")
 	if err != nil {
-		panic("cannot loadSymbol: clCreateCommandQueueWithProperties")
+		panic("cannot puregogen.OpenSymbol: clCreateCommandQueue")
 	}
-	_addr_clEnqueueBarrier, err = loadSymbol(_hnd_cl, "clEnqueueBarrier")
+	_addr_clCreateCommandQueueWithProperties, err = puregogen.OpenSymbol(_hnd_cl, "clCreateCommandQueueWithProperties")
 	if err != nil {
-		panic("cannot loadSymbol: clEnqueueBarrier")
+		panic("cannot puregogen.OpenSymbol: clCreateCommandQueueWithProperties")
 	}
-	_addr_clEnqueueNDRangeKernel, err = loadSymbol(_hnd_cl, "clEnqueueNDRangeKernel")
+	_addr_clEnqueueBarrier, err = puregogen.OpenSymbol(_hnd_cl, "clEnqueueBarrier")
 	if err != nil {
-		panic("cannot loadSymbol: clEnqueueNDRangeKernel")
+		panic("cannot puregogen.OpenSymbol: clEnqueueBarrier")
 	}
-	_addr_clEnqueueReadBuffer, err = loadSymbol(_hnd_cl, "clEnqueueReadBuffer")
+	_addr_clEnqueueNDRangeKernel, err = puregogen.OpenSymbol(_hnd_cl, "clEnqueueNDRangeKernel")
 	if err != nil {
-		panic("cannot loadSymbol: clEnqueueReadBuffer")
+		panic("cannot puregogen.OpenSymbol: clEnqueueNDRangeKernel")
 	}
-	_addr_clEnqueueReadImage, err = loadSymbol(_hnd_cl, "clEnqueueReadImage")
+	_addr_clEnqueueReadBuffer, err = puregogen.OpenSymbol(_hnd_cl, "clEnqueueReadBuffer")
 	if err != nil {
-		panic("cannot loadSymbol: clEnqueueReadImage")
+		panic("cannot puregogen.OpenSymbol: clEnqueueReadBuffer")
 	}
-	_addr_clEnqueueWriteBuffer, err = loadSymbol(_hnd_cl, "clEnqueueWriteBuffer")
+	_addr_clEnqueueReadImage, err = puregogen.OpenSymbol(_hnd_cl, "clEnqueueReadImage")
 	if err != nil {
-		panic("cannot loadSymbol: clEnqueueWriteBuffer")
+		panic("cannot puregogen.OpenSymbol: clEnqueueReadImage")
 	}
-	_addr_clEnqueueMapBuffer, err = loadSymbol(_hnd_cl, "clEnqueueMapBuffer")
+	_addr_clEnqueueWriteBuffer, err = puregogen.OpenSymbol(_hnd_cl, "clEnqueueWriteBuffer")
 	if err != nil {
-		panic("cannot loadSymbol: clEnqueueMapBuffer")
+		panic("cannot puregogen.OpenSymbol: clEnqueueWriteBuffer")
 	}
-	_addr_clEnqueueUnmapMemObject, err = loadSymbol(_hnd_cl, "clEnqueueUnmapMemObject")
+	_addr_clEnqueueMapBuffer, err = puregogen.OpenSymbol(_hnd_cl, "clEnqueueMapBuffer")
 	if err != nil {
-		panic("cannot loadSymbol: clEnqueueUnmapMemObject")
+		panic("cannot puregogen.OpenSymbol: clEnqueueMapBuffer")
 	}
-	_addr_clEnqueueMapImage, err = loadSymbol(_hnd_cl, "clEnqueueMapImage")
+	_addr_clEnqueueUnmapMemObject, err = puregogen.OpenSymbol(_hnd_cl, "clEnqueueUnmapMemObject")
 	if err != nil {
-		panic("cannot loadSymbol: clEnqueueMapImage")
+		panic("cannot puregogen.OpenSymbol: clEnqueueUnmapMemObject")
 	}
-	_addr_clFinishCommandQueue, err = loadSymbol(_hnd_cl, "clFinishCommandQueue")
+	_addr_clEnqueueMapImage, err = puregogen.OpenSymbol(_hnd_cl, "clEnqueueMapImage")
 	if err != nil {
-		panic("cannot loadSymbol: clFinishCommandQueue")
+		panic("cannot puregogen.OpenSymbol: clEnqueueMapImage")
 	}
-	_addr_clFlushCommandQueue, err = loadSymbol(_hnd_cl, "clFlushCommandQueue")
+	_addr_clFinishCommandQueue, err = puregogen.OpenSymbol(_hnd_cl, "clFinishCommandQueue")
 	if err != nil {
-		panic("cannot loadSymbol: clFlushCommandQueue")
+		panic("cannot puregogen.OpenSymbol: clFinishCommandQueue")
 	}
-	_addr_clReleaseCommandQueue, err = loadSymbol(_hnd_cl, "clReleaseCommandQueue")
+	_addr_clFlushCommandQueue, err = puregogen.OpenSymbol(_hnd_cl, "clFlushCommandQueue")
 	if err != nil {
-		panic("cannot loadSymbol: clReleaseCommandQueue")
+		panic("cannot puregogen.OpenSymbol: clFlushCommandQueue")
 	}
-	_addr_clBuildProgram, err = loadSymbol(_hnd_cl, "clBuildProgram")
+	_addr_clReleaseCommandQueue, err = puregogen.OpenSymbol(_hnd_cl, "clReleaseCommandQueue")
 	if err != nil {
-		panic("cannot loadSymbol: clBuildProgram")
+		panic("cannot puregogen.OpenSymbol: clReleaseCommandQueue")
 	}
-	_addr_clGetProgramBuildInfo, err = loadSymbol(_hnd_cl, "clGetProgramBuildInfo")
+	_addr_clBuildProgram, err = puregogen.OpenSymbol(_hnd_cl, "clBuildProgram")
 	if err != nil {
-		panic("cannot loadSymbol: clGetProgramBuildInfo")
+		panic("cannot puregogen.OpenSymbol: clBuildProgram")
 	}
-	_addr_clCreateKernel, err = loadSymbol(_hnd_cl, "clCreateKernel")
+	_addr_clGetProgramBuildInfo, err = puregogen.OpenSymbol(_hnd_cl, "clGetProgramBuildInfo")
 	if err != nil {
-		panic("cannot loadSymbol: clCreateKernel")
+		panic("cannot puregogen.OpenSymbol: clGetProgramBuildInfo")
 	}
-	_addr_clReleaseProgram, err = loadSymbol(_hnd_cl, "clReleaseProgram")
+	_addr_clCreateKernel, err = puregogen.OpenSymbol(_hnd_cl, "clCreateKernel")
 	if err != nil {
-		panic("cannot loadSymbol: clReleaseProgram")
+		panic("cannot puregogen.OpenSymbol: clCreateKernel")
 	}
-	_addr_clSetKernelArg, err = loadSymbol(_hnd_cl, "clSetKernelArg")
+	_addr_clReleaseProgram, err = puregogen.OpenSymbol(_hnd_cl, "clReleaseProgram")
 	if err != nil {
-		panic("cannot loadSymbol: clSetKernelArg")
+		panic("cannot puregogen.OpenSymbol: clReleaseProgram")
 	}
-	_addr_clReleaseKernel, err = loadSymbol(_hnd_cl, "clReleaseKernel")
+	_addr_clSetKernelArg, err = puregogen.OpenSymbol(_hnd_cl, "clSetKernelArg")
 	if err != nil {
-		panic("cannot loadSymbol: clReleaseKernel")
+		panic("cannot puregogen.OpenSymbol: clSetKernelArg")
 	}
-	_addr_clGetMemObjectInfo, err = loadSymbol(_hnd_cl, "clGetMemObjectInfo")
+	_addr_clReleaseKernel, err = puregogen.OpenSymbol(_hnd_cl, "clReleaseKernel")
 	if err != nil {
-		panic("cannot loadSymbol: clGetMemObjectInfo")
+		panic("cannot puregogen.OpenSymbol: clReleaseKernel")
 	}
-	_addr_clReleaseMemObject, err = loadSymbol(_hnd_cl, "clReleaseMemObject")
+	_addr_clGetMemObjectInfo, err = puregogen.OpenSymbol(_hnd_cl, "clGetMemObjectInfo")
 	if err != nil {
-		panic("cannot loadSymbol: clReleaseMemObject")
+		panic("cannot puregogen.OpenSymbol: clGetMemObjectInfo")
+	}
+	_addr_clReleaseMemObject, err = puregogen.OpenSymbol(_hnd_cl, "clReleaseMemObject")
+	if err != nil {
+		panic("cannot puregogen.OpenSymbol: clReleaseMemObject")
 	}
 
+	clStr = func(s string) string {
+		if !strings.HasSuffix(s, "\x00") {
+			s += "\x00"
+		}
+		_s := uintptr(unsafe.Pointer(puregogen.BytePtrFromString(s)))
+		defer runtime.KeepAlive(_s)
+		_r0, _, _ := purego.SyscallN(_addr_clStr, _s)
+		__r0 := "" + puregogen.BytePtrToString(*(**byte)(unsafe.Pointer(&_r0)))
+		return __r0
+	}
 	clGetPlatformIDs = func(numEntries uint32, platforms []Platform, numPlatforms *uint32) clStatus {
 		_numEntries := uintptr(numEntries)
 		_platforms := uintptr(unsafe.Pointer(&platforms[0]))
@@ -439,10 +449,10 @@ func init() {
 		_program := uintptr(program)
 		_numDevices := uintptr(numDevices)
 		_devices := uintptr(unsafe.Pointer(&devices[0]))
-		if strings.HasSuffix(options, "\x00") {
+		if !strings.HasSuffix(options, "\x00") {
 			options += "\x00"
 		}
-		_options := uintptr(unsafe.Pointer(&[]byte(options)[0]))
+		_options := uintptr(unsafe.Pointer(puregogen.BytePtrFromString(options)))
 		defer runtime.KeepAlive(_options)
 		_pfnNotify := uintptr(unsafe.Pointer(pfnNotify))
 		_userData := uintptr(unsafe.Pointer(&userData[0]))
@@ -463,10 +473,10 @@ func init() {
 	}
 	clCreateKernel = func(program Program, kernelName string, errCodeRet *clStatus) Kernel {
 		_program := uintptr(program)
-		if strings.HasSuffix(kernelName, "\x00") {
+		if !strings.HasSuffix(kernelName, "\x00") {
 			kernelName += "\x00"
 		}
-		_kernelName := uintptr(unsafe.Pointer(&[]byte(kernelName)[0]))
+		_kernelName := uintptr(unsafe.Pointer(puregogen.BytePtrFromString(kernelName)))
 		defer runtime.KeepAlive(_kernelName)
 		_errCodeRet := uintptr(unsafe.Pointer(errCodeRet))
 		_r0, _, _ := purego.SyscallN(_addr_clCreateKernel, _program, _kernelName, _errCodeRet)

@@ -1,4 +1,4 @@
-package puregogen
+package main
 
 type Library struct {
 	PathByOS map[string]string

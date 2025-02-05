@@ -1,4 +1,4 @@
-package puregogen
+package main
 
 import (
 	"fmt"

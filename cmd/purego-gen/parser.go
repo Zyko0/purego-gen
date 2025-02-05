@@ -1,4 +1,4 @@
-package puregogen
+package main
 
 import (
 	"errors"
@@ -23,21 +23,23 @@ var (
 	}
 	typesLookup           = make(map[Type]struct{}, len(types))
 	unsupportedParamTypes = map[Type]struct{}{
-		"struct": {},
+		//"struct": {},
 	}
 	unsupportedReturnTypes = map[Type]struct{}{
-		"struct": {},
+		//"struct": {},
 	}
-	noGenParamTypes = map[Type]struct{}{
+	noGenParamTypes = map[string]struct{}{
 		"float32": {},
 		"float64": {},
+		"struct":  {},
 	}
-	noGenReturnTypes = map[Type]struct{}{
+	noGenReturnTypes = map[string]struct{}{
 		"float32": {},
 		"float64": {},
-		"func":    {},
+		"func":    {}, // TODO: could do with purego.NewCallback
+		"struct":  {},
 	}
-	platforms = []string{"windows", "darwin", "linux", "freebsd"}
+	existingPlatforms = []string{"windows", "darwin", "linux", "freebsd"}
 )
 
 func init() {
@@ -65,7 +67,7 @@ type Func struct {
 	ParamArgs  []*FuncArg
 	ReturnArgs []*FuncArg
 	// NeedsRegisterFunc tells if the generated code will need purego.RegisterFunc instead
-	// of the syscall declaration (e.g: if floats are used)
+	// of the syscall declaration (e.g: if floats, structs are used)
 	NeedsRegisterFunc bool
 }
 
@@ -136,7 +138,9 @@ func (p *Parser) parseOrigType(t ast.Expr) string {
 			}
 		}
 		return ret
-	case *ast.MapType, *ast.StructType, *ast.ChanType, *ast.InterfaceType:
+	case *ast.StructType:
+		return "struct"
+	case *ast.MapType, *ast.ChanType, *ast.InterfaceType:
 		p.errors = append(p.errors, p.error(t, "unsupported type"))
 		return ""
 	case fmt.Stringer:
@@ -158,9 +162,11 @@ func (p *Parser) parseType(t ast.Expr) Type {
 			return Type("[]T")
 		}
 		return Type("[N]T")
-	case *ast.MapType, *ast.StructType, *ast.ChanType, *ast.InterfaceType:
+	case *ast.MapType, *ast.ChanType, *ast.InterfaceType:
 		p.errors = append(p.errors, p.error(t, fmt.Sprintf("unsupported type: %v", tt)))
 		return ""
+	case *ast.StructType:
+		return Type("struct")
 	case *ast.FuncType:
 		return Type("func")
 	case fmt.Stringer:
@@ -244,12 +250,6 @@ func (p *Parser) parseFunc(vs *ast.ValueSpec) *Func {
 			return nil
 		}
 		fn.ParamArgs = append(fn.ParamArgs, args...)
-		// Mark as not syscall-generable if necessary
-		for _, arg := range args {
-			if _, ok := noGenParamTypes[arg.Type]; ok {
-				fn.NeedsRegisterFunc = true
-			}
-		}
 		// Return value
 		args = p.parseFuncArgs(vt.Results)
 		if len(p.errors) > 0 {
@@ -259,14 +259,9 @@ func (p *Parser) parseFunc(vs *ast.ValueSpec) *Func {
 			p.errors = append(p.errors, p.error(vs, "functions must not have more than 3 return values"))
 			return nil
 		}
-		// Mark as not syscall-generable if necessary
-		for _, arg := range args {
-			if _, ok := noGenReturnTypes[arg.Type]; ok {
-				fn.NeedsRegisterFunc = true
-			}
-		}
+
 		for _, a := range args {
-			if _, ok := unsupportedReturnTypes[a.Type]; ok {
+			if _, ok := unsupportedReturnTypes[Type(a.OrigType)]; ok {
 				p.errors = append(p.errors, p.error(vt.Params, fmt.Sprintf("unsupported function return type: %s", a.Type)))
 				return nil
 			}
@@ -325,7 +320,7 @@ func (p *Parser) parseDirective(c *ast.Comment) {
 						}
 					} else {
 						// If no OS specified set it for all OS
-						for _, platform := range platforms {
+						for _, platform := range existingPlatforms {
 							paths[platform] = kv[1]
 						}
 					}
@@ -512,6 +507,29 @@ func (p *Parser) Parse() (*Generator, error) {
 			if typeDef, ok := g.types[string(_type)]; ok {
 				conflict = true
 				g.types[name] = typeDef
+			}
+		}
+	}
+	// Mark func as non-generable if types don't allow it (floats, structs)
+	for _, fn := range g.funcs {
+		for _, arg := range fn.ParamArgs {
+			if _, ok := noGenParamTypes[string(arg.OrigType)]; ok {
+				fn.NeedsRegisterFunc = true
+				break
+			}
+			if _, ok := noGenParamTypes[string(g.types[string(arg.Type)])]; ok {
+				fn.NeedsRegisterFunc = true
+				break
+			}
+		}
+		for _, arg := range fn.ReturnArgs {
+			if _, ok := noGenReturnTypes[string(arg.OrigType)]; ok {
+				fn.NeedsRegisterFunc = true
+				break
+			}
+			if _, ok := noGenReturnTypes[string(g.types[string(arg.Type)])]; ok {
+				fn.NeedsRegisterFunc = true
+				break
 			}
 		}
 	}
