@@ -56,15 +56,6 @@ func (g *Generator) appendArgsConv(codes []jen.Code, arg *FuncArg) []jen.Code {
 			),
 		))
 	case "string":
-		// Append a null byte to the string if necessary (to convert to a C string)
-		codes = append(codes, jen.If(
-			jen.Op("!").Qual("strings", "HasSuffix").Call(
-				jen.Id(arg.Name),
-				jen.Id("\"\\x00\""),
-			).Block(
-				jen.Id(arg.Name).Op("+=").Id("\"\\x00\""),
-			),
-		))
 		codes = append(codes, stmt.
 			Uintptr().
 			Parens(
