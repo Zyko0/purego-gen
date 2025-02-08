@@ -47,7 +47,7 @@ func (g *Generator) appendArgsConv(codes []jen.Code, arg *FuncArg) []jen.Code {
 	case "bool":
 		codes = append(codes, stmt.Uintptr().Parens(jen.Id("0")))
 		codes = append(codes, jen.If(rname).Block(
-			jen.Id(argCallName(arg)).Op("!=").Id("0"),
+			jen.Id(argCallName(arg)).Op("=").Id("1"),
 		))
 	case "[]T", "[N]T":
 		codes = append(codes, stmt.Uintptr().Parens(
