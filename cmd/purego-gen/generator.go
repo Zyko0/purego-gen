@@ -316,7 +316,7 @@ func (g *Generator) Generate(linkOpenLib bool) ([]*File, error) {
 		// RegisterFunc quick path
 		if fn.NeedsRegisterFunc {
 			regFunc := jen.Qual(puregoQual, "RegisterLibFunc").Call(
-				jen.Op("&").Id(fn.Symbol),
+				jen.Op("&").Id(fn.Name),
 				jen.Id(libHndVarName(fn.Library.Alias)),
 				jen.Lit(fn.Symbol),
 			)
