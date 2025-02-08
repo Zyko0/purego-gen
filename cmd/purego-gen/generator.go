@@ -39,7 +39,7 @@ func (g *Generator) appendArgsConv(codes []jen.Code, arg *FuncArg) []jen.Code {
 	rname := jen.Id(arg.Name)
 	switch _type {
 	case "uintptr":
-		codes = append(codes, stmt.Add(rname))
+		codes = append(codes, stmt.Uintptr().Parens(rname))
 	case "*T":
 		codes = append(codes, stmt.Uintptr().Parens(
 			jen.Qual("unsafe", "Pointer").Parens(rname),
@@ -175,21 +175,6 @@ func symbolVarName(symbol string) string {
 
 func libHndVarName(lib string) string {
 	return "_hnd_" + lib
-}
-
-func (g *Generator) appendLoaderFiles(files []*File) []*File {
-	// TODO: handle multiple files
-	/*for _, p := range g.platforms {
-		f := jen.NewFile(g.pkg)
-		// OS build directive
-		f.Commentf("go:build %s", p)
-		// Declarations
-		f.Var().Block(
-			jen.Commentf("Library %s")
-		)
-	}*/
-
-	return files
 }
 
 func outputFilename(filename, suffix string) string {
