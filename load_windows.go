@@ -12,3 +12,7 @@ func OpenLibrary(name string) (uintptr, error) {
 func OpenSymbol(lib uintptr, name string) (uintptr, error) {
 	return syscall.GetProcAddress(syscall.Handle(lib), name)
 }
+
+func CloseLibrary(lib uintptr) error {
+	return syscall.FreeLibrary(syscall.Handle(lib))
+}

@@ -11,3 +11,7 @@ func OpenLibrary(name string) (uintptr, error) {
 func OpenSymbol(lib uintptr, name string) (uintptr, error) {
 	return purego.Dlsym(lib, name)
 }
+
+func CloseLibrary(lib uintptr) error {
+	return purego.Dlclose(lib)
+}
