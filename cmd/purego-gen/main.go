@@ -11,8 +11,9 @@ import (
 var (
 	inputfile    string
 	extrafiles   string
-	embedLoaders bool
+	openLibrary  bool
 	platforms    string
+	functionName string
 
 	dry        bool
 	nowarnings bool
@@ -26,8 +27,9 @@ puregogen:function symbol=clCreateContext
 func main() {
 	flag.StringVar(&inputfile, "input", "", "The input .go file to parse")
 	flag.StringVar(&extrafiles, "extra", "", "An optional list of comma separated .go files to parse for definitions")
-	flag.BoolVar(&embedLoaders, "embed-loaders", false, "Generate a single file by linking unexported loading methods from ebitengine/purego")
+	flag.BoolVar(&openLibrary, "open-library", false, "If true, the generated init() function will handle loading the library from disk")
 	flag.StringVar(&platforms, "platforms", "windows,darwin,linux,freebsd", "A list of comma separated platforms supported for library loading")
+	flag.StringVar(&functionName, "function-name", "init", "The name given to the function loading all the symbols")
 	flag.BoolVar(&dry, "dry", false, "Outputs the generated code to stdout instead of a file")
 	flag.BoolVar(&nowarnings, "no-warnings", false, "Prevent printing warnings to sderr")
 	flag.Parse()
@@ -60,7 +62,10 @@ func main() {
 		os.Exit(1)
 	}
 	// Generate output file
-	files, err := g.Generate(embedLoaders)
+	files, err := g.Generate(&GenerateOptions{
+		OpenLibrary:  openLibrary,
+		FunctionName: functionName,
+	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		for _, err := range g.Errors() {

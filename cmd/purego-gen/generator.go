@@ -174,7 +174,12 @@ func outputFilename(filename, suffix string) string {
 	return d + strings.TrimSuffix(f, ext) + suffix + ext
 }
 
-func (g *Generator) Generate(linkOpenLib bool) ([]*File, error) {
+type GenerateOptions struct {
+	FunctionName string
+	OpenLibrary  bool
+}
+
+func (g *Generator) Generate(opts *GenerateOptions) ([]*File, error) {
 	var files []*File
 	var usedPlatforms []string
 
@@ -218,14 +223,13 @@ func (g *Generator) Generate(linkOpenLib bool) ([]*File, error) {
 		}
 	}
 	// Link unexported functions from purego if single file is specified
-	linkOpenLib = true
 	var initBody jen.Statement
-	if linkOpenLib {
-		// Library handles
-		initBody.Add(jen.Var().Err().Error())
-		initBody.Add(jen.Var().Id("path").String())
-		initBody.Line()
-		for l, symbols := range g.symbolsByLibrary {
+
+	// Library handles
+	initBody.Add(jen.Var().Err().Error())
+	for l, symbols := range g.symbolsByLibrary {
+		if openLibrary {
+			initBody.Add(jen.Var().Id("path").String()).Line()
 			initBody.Comment(l.Alias)
 			initBody.Add(jen.Switch(jen.Qual("runtime", "GOOS")).Block(
 				*jen.Do(func(cases *jen.Statement) {
@@ -251,22 +255,22 @@ func (g *Generator) Generate(linkOpenLib bool) ([]*File, error) {
 			initBody.If(jen.Err().Op("!=").Nil().Block(
 				jen.Panic(jen.Id("\"cannot puregogen.OpenLibrary: \"").Op("+").Id("path")),
 			))
-			// Symbols handles
-			initBody.Commentf("Symbols %s", l.Alias)
-			for _, symbol := range symbols {
-				initBody.Add(jen.List(
-					jen.Id(symbolVarName(symbol)),
-					jen.Id("err"),
-				).Op("=").Qual(puregogenQual, "OpenSymbol").Call(
-					jen.Id(libHndVarName(l.Alias)),
-					jen.Id("\""+symbol+"\"")),
-				)
-				initBody.If(jen.Err().Op("!=").Nil().Block(
-					jen.Panic(jen.Id("\"cannot puregogen.OpenSymbol: " + symbol + "\"")),
-				))
-			}
-			initBody.Line()
 		}
+		// Symbols handles
+		initBody.Line().Commentf("Symbols %s", l.Alias)
+		for _, symbol := range symbols {
+			initBody.Add(jen.List(
+				jen.Id(symbolVarName(symbol)),
+				jen.Id("err"),
+			).Op("=").Qual(puregogenQual, "OpenSymbol").Call(
+				jen.Id(libHndVarName(l.Alias)),
+				jen.Id("\""+symbol+"\"")),
+			)
+			initBody.If(jen.Err().Op("!=").Nil().Block(
+				jen.Panic(jen.Id("\"cannot puregogen.OpenSymbol: " + symbol + "\"")),
+			))
+		}
+		initBody.Line()
 	}
 	// Library and symbols pointers
 	f.Var().Defs(
@@ -358,7 +362,7 @@ func (g *Generator) Generate(linkOpenLib bool) ([]*File, error) {
 	if len(g.errors) > 0 {
 		return nil, fmt.Errorf("generate: %d error(s) encountered", len(g.errors))
 	}
-	f.Func().Id("init").Params().Block(
+	f.Func().Id(opts.FunctionName).Params().Block(
 		//jen.Commentf("// Functions - %s", "").Add( // TODO: add comments
 		append(initBody, funcs...)...,
 	//),

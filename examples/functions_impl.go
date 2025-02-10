@@ -6,7 +6,6 @@ import (
 	puregogen "github.com/Zyko0/purego-gen"
 	purego "github.com/ebitengine/purego"
 	"runtime"
-	"strings"
 	"unsafe"
 )
 
@@ -50,21 +49,7 @@ var (
 
 func init() {
 	var err error
-	var path string
 
-	// cl
-	switch runtime.GOOS {
-	case "windows":
-		path = "opencl.dll"
-	case "linux":
-		path = "opencl.so"
-	default:
-		panic("os not supported: " + runtime.GOOS)
-	}
-	_hnd_cl, err = puregogen.OpenLibrary(path)
-	if err != nil {
-		panic("cannot puregogen.OpenLibrary: " + path)
-	}
 	// Symbols cl
 	_addr_clStr, err = puregogen.OpenSymbol(_hnd_cl, "clStr")
 	if err != nil {
@@ -192,9 +177,6 @@ func init() {
 	}
 
 	clStr = func(s string) string {
-		if !strings.HasSuffix(s, "\x00") {
-			s += "\x00"
-		}
 		_s := uintptr(unsafe.Pointer(puregogen.BytePtrFromString(s)))
 		defer runtime.KeepAlive(_s)
 		_r0, _, _ := purego.SyscallN(_addr_clStr, _s)
@@ -449,9 +431,6 @@ func init() {
 		_program := uintptr(program)
 		_numDevices := uintptr(numDevices)
 		_devices := uintptr(unsafe.Pointer(&devices[0]))
-		if !strings.HasSuffix(options, "\x00") {
-			options += "\x00"
-		}
 		_options := uintptr(unsafe.Pointer(puregogen.BytePtrFromString(options)))
 		defer runtime.KeepAlive(_options)
 		_pfnNotify := uintptr(unsafe.Pointer(pfnNotify))
@@ -473,9 +452,6 @@ func init() {
 	}
 	clCreateKernel = func(program Program, kernelName string, errCodeRet *clStatus) Kernel {
 		_program := uintptr(program)
-		if !strings.HasSuffix(kernelName, "\x00") {
-			kernelName += "\x00"
-		}
 		_kernelName := uintptr(unsafe.Pointer(puregogen.BytePtrFromString(kernelName)))
 		defer runtime.KeepAlive(_kernelName)
 		_errCodeRet := uintptr(unsafe.Pointer(errCodeRet))
