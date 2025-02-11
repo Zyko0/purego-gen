@@ -14,7 +14,6 @@ var (
 	_hnd_cl uintptr
 	// Symbols
 	// cl
-	_addr_clStr                              uintptr
 	_addr_clGetPlatformIDs                   uintptr
 	_addr_clGetPlatformInfo                  uintptr
 	_addr_clGetDeviceIDs                     uintptr
@@ -51,10 +50,6 @@ func init() {
 	var err error
 
 	// Symbols cl
-	_addr_clStr, err = puregogen.OpenSymbol(_hnd_cl, "clStr")
-	if err != nil {
-		panic("cannot puregogen.OpenSymbol: clStr")
-	}
 	_addr_clGetPlatformIDs, err = puregogen.OpenSymbol(_hnd_cl, "clGetPlatformIDs")
 	if err != nil {
 		panic("cannot puregogen.OpenSymbol: clGetPlatformIDs")
@@ -176,13 +171,6 @@ func init() {
 		panic("cannot puregogen.OpenSymbol: clReleaseMemObject")
 	}
 
-	clStr = func(s string) string {
-		_s := uintptr(unsafe.Pointer(puregogen.BytePtrFromString(s)))
-		defer runtime.KeepAlive(_s)
-		_r0, _, _ := purego.SyscallN(_addr_clStr, _s)
-		__r0 := "" + puregogen.BytePtrToString(*(**byte)(unsafe.Pointer(&_r0)))
-		return __r0
-	}
 	clGetPlatformIDs = func(numEntries uint32, platforms []Platform, numPlatforms *uint32) clStatus {
 		_numEntries := uintptr(numEntries)
 		_platforms := uintptr(unsafe.Pointer(&platforms[0]))
@@ -377,7 +365,8 @@ func init() {
 		_event := uintptr(unsafe.Pointer(event))
 		_errCodeRet := uintptr(unsafe.Pointer(errCodeRet))
 		_r0, _, _ := purego.SyscallN(_addr_clEnqueueMapBuffer, _queue, _buffer, _blockingMap, _mapFlags, _offset, _size, _numEventsWaitList, _eventWaitList, _event, _errCodeRet)
-		return _r0
+		__r0 := uintptr(_r0)
+		return __r0
 	}
 	clEnqueueUnmapMemObject = func(queue CommandQueue, buffer Buffer, mappedPtr unsafe.Pointer, numEventsWaitList uint, eventWaitList []Event, event *Event) clStatus {
 		_queue := uintptr(queue)
@@ -407,7 +396,8 @@ func init() {
 		_event := uintptr(unsafe.Pointer(event))
 		_errCodeRet := uintptr(unsafe.Pointer(errCodeRet))
 		_r0, _, _ := purego.SyscallN(_addr_clEnqueueMapImage, _queue, _image, _blockingMap, _mapFlags, _origin, _region, _imageRowPitch, _imageSlicePitch, _numEventsWaitList, _eventWaitList, _event, _errCodeRet)
-		return _r0
+		__r0 := uintptr(_r0)
+		return __r0
 	}
 	clFinishCommandQueue = func(queue CommandQueue) clStatus {
 		_queue := uintptr(queue)

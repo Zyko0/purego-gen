@@ -32,7 +32,6 @@ type (
 
 var (
 	//puregogen:library path:windows=opencl.dll path:linux=opencl.so alias=cl
-	clStr             func(s string) string
 	clGetPlatformIDs  func(numEntries uint32, platforms []Platform, numPlatforms *uint32) clStatus
 	clGetPlatformInfo func(platform Platform, platformInfo platformInfo, paramValueSize clSize, paramValue []byte, paramValueSizeRet *clSize) clStatus
 	// Device

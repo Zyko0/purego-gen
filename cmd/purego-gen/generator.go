@@ -96,7 +96,11 @@ func (g *Generator) appendRetsConv(codes []jen.Code, ret *FuncArg) ([]jen.Code, 
 	rname := jen.Id(ret.Name)
 	switch _type {
 	case "uintptr":
-		return codes, false
+		//return codes, false
+		codes = append(codes, stmt.
+			Id(ret.OrigType).
+			Parens(jen.Id(ret.Name)),
+		)
 	case "*T":
 		codes = append(codes,
 			stmt.Parens(
