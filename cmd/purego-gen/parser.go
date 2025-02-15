@@ -437,7 +437,7 @@ func (p *Parser) Parse() (*Generator, error) {
 			switch tn := n.(type) {
 			case *ast.ImportSpec:
 				imp := &Import{
-					Path: tn.Path.Value,
+					Path: strings.Trim(tn.Path.Value, "\""),
 				}
 				if tn.Name != nil {
 					imp.Name = tn.Name.Name
