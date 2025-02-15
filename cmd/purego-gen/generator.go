@@ -325,12 +325,22 @@ func (g *Generator) Generate(opts *GenerateOptions) ([]*File, error) {
 		for _, arg := range fn.ParamArgs {
 			p := jen.Id(arg.Name)
 			if strings.Contains(arg.OrigType, ".") {
+				var prefix string
 				parts := strings.SplitN(arg.OrigType, ".", 2)
+				idx := strings.LastIndexAny(parts[0], "]*")
+				if idx != -1 {
+					prefix = parts[0][:idx+1]
+					parts[0] = parts[0][idx+1:]
+				}
 				path, ok := imports[parts[0]]
 				if !ok {
 					path = parts[0]
 				}
-				p.Qual(path, parts[1])
+				if prefix != "" {
+					p.Id(prefix).Qual(path, parts[1])
+				} else {
+					p.Qual(path, parts[1])
+				}
 			} else {
 				p.Id(arg.OrigType)
 			}
@@ -347,12 +357,22 @@ func (g *Generator) Generate(opts *GenerateOptions) ([]*File, error) {
 				outValues[i] = "_r" + string('0'+i)
 				var typ *jen.Statement
 				if strings.Contains(a.OrigType, ".") {
+					var prefix string
 					parts := strings.SplitN(a.OrigType, ".", 2)
+					idx := strings.LastIndexAny(parts[0], "]*")
+					if idx != -1 {
+						prefix = parts[0][:idx+1]
+						parts[0] = parts[0][idx+1:]
+					}
 					path, ok := imports[parts[0]]
 					if !ok {
 						path = parts[0]
 					}
-					typ = jen.Qual(path, parts[1])
+					if prefix != "" {
+						typ = jen.Id(prefix).Qual(path, parts[1])
+					} else {
+						typ = jen.Qual(path, parts[1])
+					}
 				} else {
 					typ = jen.Id(a.OrigType)
 				}
