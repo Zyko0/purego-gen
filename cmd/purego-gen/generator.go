@@ -35,28 +35,26 @@ func (g *Generator) appendArgsConv(codes []jen.Code, arg *FuncArg) []jen.Code {
 	if t, ok := g.types[_type]; ok {
 		_type = string(t)
 	}
-	stmt := jen.Id(argCallName(arg)).Op(":=")
 	rname := jen.Id(arg.Name)
 	switch _type {
 	case "uintptr":
-		codes = append(codes, stmt.Uintptr().Parens(rname))
+		codes = append(codes, jen.Uintptr().Parens(rname))
 	case "*T":
-		codes = append(codes, stmt.Uintptr().Parens(
+		codes = append(codes, jen.Uintptr().Parens(
 			jen.Qual("unsafe", "Pointer").Parens(rname),
 		))
 	case "bool":
-		codes = append(codes, stmt.Uintptr().Parens(jen.Id("0")))
-		codes = append(codes, jen.If(rname).Block(
-			jen.Id(argCallName(arg)).Op("=").Id("1"),
+		codes = append(codes, jen.Qual(puregogenQual, "BoolToUintptr").Call(
+			jen.Id(arg.Name),
 		))
 	case "[]T", "[N]T":
-		codes = append(codes, stmt.Uintptr().Parens(
+		codes = append(codes, jen.Uintptr().Parens(
 			jen.Qual("unsafe", "Pointer").Parens(
 				jen.Id("&").Add(rname.Index(jen.Id("0"))),
 			),
 		))
 	case "string":
-		codes = append(codes, stmt.
+		codes = append(codes, jen.
 			Uintptr().
 			Parens(
 				jen.Qual("unsafe", "Pointer").Parens(
@@ -66,9 +64,8 @@ func (g *Generator) appendArgsConv(codes []jen.Code, arg *FuncArg) []jen.Code {
 				),
 			),
 		)
-		codes = append(codes, jen.Defer().Qual("runtime", "KeepAlive").Call(jen.Id(argCallName(arg))))
 	case "func":
-		codes = append(codes, stmt.Add(
+		codes = append(codes, jen.Add(
 			jen.Qual(puregoQual, "NewCallback").Call(rname),
 		))
 	default:
@@ -79,7 +76,7 @@ func (g *Generator) appendArgsConv(codes []jen.Code, arg *FuncArg) []jen.Code {
 			_type == "rune",
 			_type == "byte",
 			_type == "struct":
-			codes = append(codes, stmt.Uintptr().Parens(rname))
+			codes = append(codes, jen.Uintptr().Parens(rname))
 		default:
 			g.errors = append(g.errors, fmt.Errorf("unsupported type: %s", _type))
 		}
@@ -345,8 +342,7 @@ func (g *Generator) Generate(opts *GenerateOptions) ([]*File, error) {
 				p.Id(arg.OrigType)
 			}
 			params = append(params, p)
-			callParams = append(callParams, jen.Id(argCallName(arg)))
-			funcBody = g.appendArgsConv(funcBody, arg)
+			callParams = g.appendArgsConv(callParams, arg)
 		}
 
 		// Syscall
