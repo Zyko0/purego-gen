@@ -47,10 +47,20 @@ func (g *Generator) appendArgsConv(codes []jen.Code, arg *FuncArg) []jen.Code {
 		codes = append(codes, jen.Qual(puregogenQual, "BoolToUintptr").Call(
 			jen.Id(arg.Name),
 		))
-	case "[]T", "[N]T":
+	case "[]T":
 		codes = append(codes, jen.Uintptr().Parens(
 			jen.Qual("unsafe", "Pointer").Parens(
-				jen.Id("&").Add(rname.Index(jen.Id("0"))),
+				jen.Qual("unsafe", "SliceData").Call(
+					rname,
+				),
+			),
+		))
+	case "[N]T":
+		codes = append(codes, jen.Uintptr().Parens(
+			jen.Qual("unsafe", "Pointer").Parens(
+				jen.Qual("unsafe", "SliceData").Call(
+					rname.Index(jen.Op(":")),
+				),
 			),
 		))
 	case "string":
@@ -117,7 +127,9 @@ func (g *Generator) appendRetsConv(codes []jen.Code, ret *FuncArg) ([]jen.Code, 
 	case "[]T", "[N]T":
 		codes = append(codes, stmt.Uintptr().Parens(
 			jen.Qual("unsafe", "Pointer").Parens(
-				jen.Id("&").Add(rname.Index(jen.Id("0"))),
+				jen.Qual("unsafe", "Slice").Call(
+					rname, jen.Len(rname),
+				),
 			),
 		))
 	case "string":
@@ -315,12 +327,19 @@ func (g *Generator) Generate(opts *GenerateOptions) ([]*File, error) {
 		// Syscall function call
 		var params []jen.Code
 		var callParams []jen.Code
+		var keepAlives []string
 		var returnTypes []jen.Code
 		var funcBody []jen.Code
 		// Arguments conversions to uintptr
 		callParams = append(callParams, jen.Id(symbolVarName(fn.Symbol)))
 		for _, arg := range fn.ParamArgs {
 			p := jen.Id(arg.Name)
+			switch {
+			case arg.OrigType == "string",
+				strings.HasPrefix(arg.OrigType, "*"),
+				strings.HasPrefix(arg.OrigType, "["):
+				keepAlives = append(keepAlives, arg.Name)
+			}
 			if strings.Contains(arg.OrigType, ".") {
 				var prefix string
 				parts := strings.SplitN(arg.OrigType, ".", 2)
@@ -392,6 +411,13 @@ func (g *Generator) Generate(opts *GenerateOptions) ([]*File, error) {
 				returnValues = append(returnValues, jen.Id("_"+arg.Name))
 			} else {
 				returnValues = append(returnValues, jen.Id(arg.Name))
+			}
+		}
+		if len(keepAlives) > 0 {
+			for _, arg := range keepAlives {
+				funcBody = append(funcBody, jen.Qual("runtime", "KeepAlive").
+					Call(jen.Id(arg)),
+				)
 			}
 		}
 		if len(returnValues) > 0 {

@@ -1,10 +1,11 @@
-//go:build linux || windows
+//go:build windows || linux
 
 package examples
 
 import (
 	puregogen "github.com/Zyko0/purego-gen"
 	purego "github.com/ebitengine/purego"
+	"runtime"
 	"unsafe"
 )
 
@@ -173,28 +174,40 @@ func init() {
 	}
 
 	clGetPlatformIDs = func(numEntries uint32, platforms []Platform, numPlatforms *uint32) clStatus {
-		_r0, _, _ := purego.SyscallN(_addr_clGetPlatformIDs, uintptr(numEntries), uintptr(unsafe.Pointer(&platforms[0])), uintptr(unsafe.Pointer(numPlatforms)))
+		_r0, _, _ := purego.SyscallN(_addr_clGetPlatformIDs, uintptr(numEntries), uintptr(unsafe.Pointer(unsafe.SliceData(platforms))), uintptr(unsafe.Pointer(numPlatforms)))
 		__r0 := clStatus(_r0)
+		runtime.KeepAlive(platforms)
+		runtime.KeepAlive(numPlatforms)
 		return __r0
 	}
 	clGetPlatformInfo = func(platform Platform, platformInfo platformInfo, paramValueSize clSize, paramValue []byte, paramValueSizeRet *clSize) clStatus {
-		_r0, _, _ := purego.SyscallN(_addr_clGetPlatformInfo, uintptr(platform), uintptr(platformInfo), uintptr(paramValueSize), uintptr(unsafe.Pointer(&paramValue[0])), uintptr(unsafe.Pointer(paramValueSizeRet)))
+		_r0, _, _ := purego.SyscallN(_addr_clGetPlatformInfo, uintptr(platform), uintptr(platformInfo), uintptr(paramValueSize), uintptr(unsafe.Pointer(unsafe.SliceData(paramValue))), uintptr(unsafe.Pointer(paramValueSizeRet)))
 		__r0 := clStatus(_r0)
+		runtime.KeepAlive(paramValue)
+		runtime.KeepAlive(paramValueSizeRet)
 		return __r0
 	}
 	clGetDeviceIDs = func(platform Platform, deviceType DeviceType, numEntries uint32, devices []Device, numDevices *uint32) clStatus {
-		_r0, _, _ := purego.SyscallN(_addr_clGetDeviceIDs, uintptr(platform), uintptr(deviceType), uintptr(numEntries), uintptr(unsafe.Pointer(&devices[0])), uintptr(unsafe.Pointer(numDevices)))
+		_r0, _, _ := purego.SyscallN(_addr_clGetDeviceIDs, uintptr(platform), uintptr(deviceType), uintptr(numEntries), uintptr(unsafe.Pointer(unsafe.SliceData(devices))), uintptr(unsafe.Pointer(numDevices)))
 		__r0 := clStatus(_r0)
+		runtime.KeepAlive(devices)
+		runtime.KeepAlive(numDevices)
 		return __r0
 	}
 	clGetDeviceInfo = func(device Device, deviceInfo deviceInfo, paramValueSize clSize, paramValue []byte, paramValueSizeRet *clSize) clStatus {
-		_r0, _, _ := purego.SyscallN(_addr_clGetDeviceInfo, uintptr(device), uintptr(deviceInfo), uintptr(paramValueSize), uintptr(unsafe.Pointer(&paramValue[0])), uintptr(unsafe.Pointer(paramValueSizeRet)))
+		_r0, _, _ := purego.SyscallN(_addr_clGetDeviceInfo, uintptr(device), uintptr(deviceInfo), uintptr(paramValueSize), uintptr(unsafe.Pointer(unsafe.SliceData(paramValue))), uintptr(unsafe.Pointer(paramValueSizeRet)))
 		__r0 := clStatus(_r0)
+		runtime.KeepAlive(paramValue)
+		runtime.KeepAlive(paramValueSizeRet)
 		return __r0
 	}
 	createContext = func(properties unsafe.Pointer, numDevices uint32, devices []Device, pfnNotify *createContextNotifyFunc, userData []byte, errCodeRet *clStatus) Context {
-		_r0, _, _ := purego.SyscallN(_addr_clCreateContext, uintptr(properties), uintptr(numDevices), uintptr(unsafe.Pointer(&devices[0])), uintptr(unsafe.Pointer(pfnNotify)), uintptr(unsafe.Pointer(&userData[0])), uintptr(unsafe.Pointer(errCodeRet)))
+		_r0, _, _ := purego.SyscallN(_addr_clCreateContext, uintptr(properties), uintptr(numDevices), uintptr(unsafe.Pointer(unsafe.SliceData(devices))), uintptr(unsafe.Pointer(pfnNotify)), uintptr(unsafe.Pointer(unsafe.SliceData(userData))), uintptr(unsafe.Pointer(errCodeRet)))
 		__r0 := Context(_r0)
+		runtime.KeepAlive(devices)
+		runtime.KeepAlive(pfnNotify)
+		runtime.KeepAlive(userData)
+		runtime.KeepAlive(errCodeRet)
 		return __r0
 	}
 	clReleaseContext = func(ctx Context) clStatus {
@@ -203,28 +216,36 @@ func init() {
 		return __r0
 	}
 	clCreateProgramWithSource = func(ctx Context, count clSize, strings []string, lengths []clSize, errCodeRet *clStatus) Program {
-		_r0, _, _ := purego.SyscallN(_addr_clCreateProgramWithSource, uintptr(ctx), uintptr(count), uintptr(unsafe.Pointer(&strings[0])), uintptr(unsafe.Pointer(&lengths[0])), uintptr(unsafe.Pointer(errCodeRet)))
+		_r0, _, _ := purego.SyscallN(_addr_clCreateProgramWithSource, uintptr(ctx), uintptr(count), uintptr(unsafe.Pointer(unsafe.SliceData(strings))), uintptr(unsafe.Pointer(unsafe.SliceData(lengths))), uintptr(unsafe.Pointer(errCodeRet)))
 		__r0 := Program(_r0)
+		runtime.KeepAlive(strings)
+		runtime.KeepAlive(lengths)
+		runtime.KeepAlive(errCodeRet)
 		return __r0
 	}
 	clCreateBuffer = func(ctx Context, memFlags MemFlag, size clSize, hostPtr unsafe.Pointer, errCodeRet *clStatus) Buffer {
 		_r0, _, _ := purego.SyscallN(_addr_clCreateBuffer, uintptr(ctx), uintptr(memFlags), uintptr(size), uintptr(hostPtr), uintptr(unsafe.Pointer(errCodeRet)))
 		__r0 := Buffer(_r0)
+		runtime.KeepAlive(errCodeRet)
 		return __r0
 	}
 	clCreateImage2D = func(ctx Context, memFlags MemFlag, imageFormat *ImageFormat, imageWidth clSize, imageHeight clSize, imageRowPitch clSize, hostPtr unsafe.Pointer, errCodeRet *clStatus) Buffer {
 		_r0, _, _ := purego.SyscallN(_addr_clCreateImage2D, uintptr(ctx), uintptr(memFlags), uintptr(unsafe.Pointer(imageFormat)), uintptr(imageWidth), uintptr(imageHeight), uintptr(imageRowPitch), uintptr(hostPtr), uintptr(unsafe.Pointer(errCodeRet)))
 		__r0 := Buffer(_r0)
+		runtime.KeepAlive(imageFormat)
+		runtime.KeepAlive(errCodeRet)
 		return __r0
 	}
 	clCreateCommandQueue = func(context Context, device Device, properties CommandQueueProperty, errCodeRet *clStatus) CommandQueue {
 		_r0, _, _ := purego.SyscallN(_addr_clCreateCommandQueue, uintptr(context), uintptr(device), uintptr(properties), uintptr(unsafe.Pointer(errCodeRet)))
 		__r0 := CommandQueue(_r0)
+		runtime.KeepAlive(errCodeRet)
 		return __r0
 	}
 	clCreateCommandQueueWithProperties = func(context Context, device Device, properties CommandQueueProperty, errCodeRet *clStatus) CommandQueue {
 		_r0, _, _ := purego.SyscallN(_addr_clCreateCommandQueueWithProperties, uintptr(context), uintptr(device), uintptr(properties), uintptr(unsafe.Pointer(errCodeRet)))
 		__r0 := CommandQueue(_r0)
+		runtime.KeepAlive(errCodeRet)
 		return __r0
 	}
 	clEnqueueBarrier = func(queue CommandQueue) clStatus {
@@ -233,38 +254,63 @@ func init() {
 		return __r0
 	}
 	clEnqueueNDRangeKernel = func(queue CommandQueue, kernel Kernel, workDim uint, globalWorkOffset []clSize, globalWorkSize []clSize, localWorkSize []clSize, numEventsWaitList uint, eventWaitList []Event, event *Event) clStatus {
-		_r0, _, _ := purego.SyscallN(_addr_clEnqueueNDRangeKernel, uintptr(queue), uintptr(kernel), uintptr(workDim), uintptr(unsafe.Pointer(&globalWorkOffset[0])), uintptr(unsafe.Pointer(&globalWorkSize[0])), uintptr(unsafe.Pointer(&localWorkSize[0])), uintptr(numEventsWaitList), uintptr(unsafe.Pointer(&eventWaitList[0])), uintptr(unsafe.Pointer(event)))
+		_r0, _, _ := purego.SyscallN(_addr_clEnqueueNDRangeKernel, uintptr(queue), uintptr(kernel), uintptr(workDim), uintptr(unsafe.Pointer(unsafe.SliceData(globalWorkOffset))), uintptr(unsafe.Pointer(unsafe.SliceData(globalWorkSize))), uintptr(unsafe.Pointer(unsafe.SliceData(localWorkSize))), uintptr(numEventsWaitList), uintptr(unsafe.Pointer(unsafe.SliceData(eventWaitList))), uintptr(unsafe.Pointer(event)))
 		__r0 := clStatus(_r0)
+		runtime.KeepAlive(globalWorkOffset)
+		runtime.KeepAlive(globalWorkSize)
+		runtime.KeepAlive(localWorkSize)
+		runtime.KeepAlive(eventWaitList)
+		runtime.KeepAlive(event)
 		return __r0
 	}
 	clEnqueueReadBuffer = func(queue CommandQueue, buffer Buffer, blockingRead bool, offset clSize, cb clSize, ptr unsafe.Pointer, numEventsWaitList uint, eventWaitList []Event, event *Event) clStatus {
-		_r0, _, _ := purego.SyscallN(_addr_clEnqueueReadBuffer, uintptr(queue), uintptr(buffer), puregogen.BoolToUintptr(blockingRead), uintptr(offset), uintptr(cb), uintptr(ptr), uintptr(numEventsWaitList), uintptr(unsafe.Pointer(&eventWaitList[0])), uintptr(unsafe.Pointer(event)))
+		_r0, _, _ := purego.SyscallN(_addr_clEnqueueReadBuffer, uintptr(queue), uintptr(buffer), puregogen.BoolToUintptr(blockingRead), uintptr(offset), uintptr(cb), uintptr(ptr), uintptr(numEventsWaitList), uintptr(unsafe.Pointer(unsafe.SliceData(eventWaitList))), uintptr(unsafe.Pointer(event)))
 		__r0 := clStatus(_r0)
+		runtime.KeepAlive(eventWaitList)
+		runtime.KeepAlive(event)
 		return __r0
 	}
 	clEnqueueReadImage = func(queue CommandQueue, image Buffer, blockingRead bool, origin [3]clSize, region [3]clSize, row_pitch clSize, slice_pitch clSize, ptr unsafe.Pointer, numEventsWaitList uint, eventWaitList []Event, event *Event) clStatus {
-		_r0, _, _ := purego.SyscallN(_addr_clEnqueueReadImage, uintptr(queue), uintptr(image), puregogen.BoolToUintptr(blockingRead), uintptr(unsafe.Pointer(&origin[0])), uintptr(unsafe.Pointer(&region[0])), uintptr(row_pitch), uintptr(slice_pitch), uintptr(ptr), uintptr(numEventsWaitList), uintptr(unsafe.Pointer(&eventWaitList[0])), uintptr(unsafe.Pointer(event)))
+		_r0, _, _ := purego.SyscallN(_addr_clEnqueueReadImage, uintptr(queue), uintptr(image), puregogen.BoolToUintptr(blockingRead), uintptr(unsafe.Pointer(unsafe.SliceData(origin[:]))), uintptr(unsafe.Pointer(unsafe.SliceData(region[:]))), uintptr(row_pitch), uintptr(slice_pitch), uintptr(ptr), uintptr(numEventsWaitList), uintptr(unsafe.Pointer(unsafe.SliceData(eventWaitList))), uintptr(unsafe.Pointer(event)))
 		__r0 := clStatus(_r0)
+		runtime.KeepAlive(origin)
+		runtime.KeepAlive(region)
+		runtime.KeepAlive(eventWaitList)
+		runtime.KeepAlive(event)
 		return __r0
 	}
 	clEnqueueWriteBuffer = func(queue CommandQueue, buffer Buffer, blockingWrite bool, offset clSize, cb clSize, ptr unsafe.Pointer, numEventsWaitList uint, eventWaitList []Event, event *Event) clStatus {
-		_r0, _, _ := purego.SyscallN(_addr_clEnqueueWriteBuffer, uintptr(queue), uintptr(buffer), puregogen.BoolToUintptr(blockingWrite), uintptr(offset), uintptr(cb), uintptr(ptr), uintptr(numEventsWaitList), uintptr(unsafe.Pointer(&eventWaitList[0])), uintptr(unsafe.Pointer(event)))
+		_r0, _, _ := purego.SyscallN(_addr_clEnqueueWriteBuffer, uintptr(queue), uintptr(buffer), puregogen.BoolToUintptr(blockingWrite), uintptr(offset), uintptr(cb), uintptr(ptr), uintptr(numEventsWaitList), uintptr(unsafe.Pointer(unsafe.SliceData(eventWaitList))), uintptr(unsafe.Pointer(event)))
 		__r0 := clStatus(_r0)
+		runtime.KeepAlive(eventWaitList)
+		runtime.KeepAlive(event)
 		return __r0
 	}
 	clEnqueueMapBuffer = func(queue CommandQueue, buffer Buffer, blockingMap bool, mapFlags MapFlag, offset clSize, size clSize, numEventsWaitList uint, eventWaitList []Event, event *Event, errCodeRet *clStatus) uintptr {
-		_r0, _, _ := purego.SyscallN(_addr_clEnqueueMapBuffer, uintptr(queue), uintptr(buffer), puregogen.BoolToUintptr(blockingMap), uintptr(mapFlags), uintptr(offset), uintptr(size), uintptr(numEventsWaitList), uintptr(unsafe.Pointer(&eventWaitList[0])), uintptr(unsafe.Pointer(event)), uintptr(unsafe.Pointer(errCodeRet)))
+		_r0, _, _ := purego.SyscallN(_addr_clEnqueueMapBuffer, uintptr(queue), uintptr(buffer), puregogen.BoolToUintptr(blockingMap), uintptr(mapFlags), uintptr(offset), uintptr(size), uintptr(numEventsWaitList), uintptr(unsafe.Pointer(unsafe.SliceData(eventWaitList))), uintptr(unsafe.Pointer(event)), uintptr(unsafe.Pointer(errCodeRet)))
 		__r0 := uintptr(_r0)
+		runtime.KeepAlive(eventWaitList)
+		runtime.KeepAlive(event)
+		runtime.KeepAlive(errCodeRet)
 		return __r0
 	}
 	clEnqueueUnmapMemObject = func(queue CommandQueue, buffer Buffer, mappedPtr unsafe.Pointer, numEventsWaitList uint, eventWaitList []Event, event *Event) clStatus {
-		_r0, _, _ := purego.SyscallN(_addr_clEnqueueUnmapMemObject, uintptr(queue), uintptr(buffer), uintptr(mappedPtr), uintptr(numEventsWaitList), uintptr(unsafe.Pointer(&eventWaitList[0])), uintptr(unsafe.Pointer(event)))
+		_r0, _, _ := purego.SyscallN(_addr_clEnqueueUnmapMemObject, uintptr(queue), uintptr(buffer), uintptr(mappedPtr), uintptr(numEventsWaitList), uintptr(unsafe.Pointer(unsafe.SliceData(eventWaitList))), uintptr(unsafe.Pointer(event)))
 		__r0 := clStatus(_r0)
+		runtime.KeepAlive(eventWaitList)
+		runtime.KeepAlive(event)
 		return __r0
 	}
 	clEnqueueMapImage = func(queue CommandQueue, image Buffer, blockingMap bool, mapFlags MapFlag, origin [3]clSize, region [3]clSize, imageRowPitch *clSize, imageSlicePitch *clSize, numEventsWaitList uint, eventWaitList []Event, event *Event, errCodeRet *clStatus) uintptr {
-		_r0, _, _ := purego.SyscallN(_addr_clEnqueueMapImage, uintptr(queue), uintptr(image), puregogen.BoolToUintptr(blockingMap), uintptr(mapFlags), uintptr(unsafe.Pointer(&origin[0])), uintptr(unsafe.Pointer(&region[0])), uintptr(unsafe.Pointer(imageRowPitch)), uintptr(unsafe.Pointer(imageSlicePitch)), uintptr(numEventsWaitList), uintptr(unsafe.Pointer(&eventWaitList[0])), uintptr(unsafe.Pointer(event)), uintptr(unsafe.Pointer(errCodeRet)))
+		_r0, _, _ := purego.SyscallN(_addr_clEnqueueMapImage, uintptr(queue), uintptr(image), puregogen.BoolToUintptr(blockingMap), uintptr(mapFlags), uintptr(unsafe.Pointer(unsafe.SliceData(origin[:]))), uintptr(unsafe.Pointer(unsafe.SliceData(region[:]))), uintptr(unsafe.Pointer(imageRowPitch)), uintptr(unsafe.Pointer(imageSlicePitch)), uintptr(numEventsWaitList), uintptr(unsafe.Pointer(unsafe.SliceData(eventWaitList))), uintptr(unsafe.Pointer(event)), uintptr(unsafe.Pointer(errCodeRet)))
 		__r0 := uintptr(_r0)
+		runtime.KeepAlive(origin)
+		runtime.KeepAlive(region)
+		runtime.KeepAlive(imageRowPitch)
+		runtime.KeepAlive(imageSlicePitch)
+		runtime.KeepAlive(eventWaitList)
+		runtime.KeepAlive(event)
+		runtime.KeepAlive(errCodeRet)
 		return __r0
 	}
 	clFinishCommandQueue = func(queue CommandQueue) clStatus {
@@ -283,18 +329,25 @@ func init() {
 		return __r0
 	}
 	clBuildProgram = func(program Program, numDevices uint32, devices []Device, options string, pfnNotify *buildProgramNotifyFunc, userData []byte) clStatus {
-		_r0, _, _ := purego.SyscallN(_addr_clBuildProgram, uintptr(program), uintptr(numDevices), uintptr(unsafe.Pointer(&devices[0])), uintptr(unsafe.Pointer(puregogen.BytePtrFromString(options))), uintptr(unsafe.Pointer(pfnNotify)), uintptr(unsafe.Pointer(&userData[0])))
+		_r0, _, _ := purego.SyscallN(_addr_clBuildProgram, uintptr(program), uintptr(numDevices), uintptr(unsafe.Pointer(unsafe.SliceData(devices))), uintptr(unsafe.Pointer(puregogen.BytePtrFromString(options))), uintptr(unsafe.Pointer(pfnNotify)), uintptr(unsafe.Pointer(unsafe.SliceData(userData))))
 		__r0 := clStatus(_r0)
+		runtime.KeepAlive(devices)
+		runtime.KeepAlive(options)
+		runtime.KeepAlive(pfnNotify)
+		runtime.KeepAlive(userData)
 		return __r0
 	}
 	clGetProgramBuildInfo = func(program Program, device Device, info programBuildInfo, paramSize clSize, paramValue unsafe.Pointer, paramSizeRet *clSize) clStatus {
 		_r0, _, _ := purego.SyscallN(_addr_clGetProgramBuildInfo, uintptr(program), uintptr(device), uintptr(info), uintptr(paramSize), uintptr(paramValue), uintptr(unsafe.Pointer(paramSizeRet)))
 		__r0 := clStatus(_r0)
+		runtime.KeepAlive(paramSizeRet)
 		return __r0
 	}
 	clCreateKernel = func(program Program, kernelName string, errCodeRet *clStatus) Kernel {
 		_r0, _, _ := purego.SyscallN(_addr_clCreateKernel, uintptr(program), uintptr(unsafe.Pointer(puregogen.BytePtrFromString(kernelName))), uintptr(unsafe.Pointer(errCodeRet)))
 		__r0 := Kernel(_r0)
+		runtime.KeepAlive(kernelName)
+		runtime.KeepAlive(errCodeRet)
 		return __r0
 	}
 	clReleaseProgram = func(program Program) clStatus {
@@ -315,6 +368,7 @@ func init() {
 	clGetMemObjectInfo = func(buffer Buffer, memInfo memInfo, paramValueSize clSize, paramValue unsafe.Pointer, paramValueSizeRet *clSize) clStatus {
 		_r0, _, _ := purego.SyscallN(_addr_clGetMemObjectInfo, uintptr(buffer), uintptr(memInfo), uintptr(paramValueSize), uintptr(paramValue), uintptr(unsafe.Pointer(paramValueSizeRet)))
 		__r0 := clStatus(_r0)
+		runtime.KeepAlive(paramValueSizeRet)
 		return __r0
 	}
 	clReleaseMemObject = func(buffer Buffer) clStatus {
