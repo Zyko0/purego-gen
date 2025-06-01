@@ -188,8 +188,9 @@ func outputFilename(filename, suffix string) string {
 }
 
 type GenerateOptions struct {
-	FunctionName string
-	OpenLibrary  bool
+	FunctionName  string
+	OpenLibrary   bool
+	LibraryHandle bool
 }
 
 func (g *Generator) Generate(opts *GenerateOptions) ([]*File, error) {
@@ -293,23 +294,25 @@ func (g *Generator) Generate(opts *GenerateOptions) ([]*File, error) {
 		initBody.Line()
 	}
 	// Library and symbols pointers
-	f.Var().Defs(
-		jen.Comment("Library handles"),
-		jen.Do(func(s *jen.Statement) {
-			for l := range g.symbolsByLibrary {
-				s.Id(libHndVarName(l.Alias)).Uintptr()
-			}
-		}),
-		jen.Comment("Symbols"),
-		jen.Do(func(s *jen.Statement) {
+	f.Var().DefsFunc(func(grp *jen.Group) {
+		if opts.LibraryHandle {
+			grp.Comment("Library handles")
+			grp.Do(func(s *jen.Statement) {
+				for l := range g.symbolsByLibrary {
+					s.Id(libHndVarName(l.Alias)).Uintptr()
+				}
+			})
+		}
+		grp.Comment("Symbols")
+		grp.Do(func(s *jen.Statement) {
 			for l, symbols := range g.symbolsByLibrary {
 				s.Comment(l.Alias).Line()
 				for _, symbol := range symbols {
 					s.Id(symbolVarName(symbol)).Uintptr().Line()
 				}
 			}
-		}),
-	)
+		})
+	})
 	// Init
 	var funcs []jen.Code
 	for _, fn := range g.funcs {

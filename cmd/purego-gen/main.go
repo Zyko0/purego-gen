@@ -15,8 +15,9 @@ var (
 	platforms    string
 	functionName string
 
-	dry        bool
-	nowarnings bool
+	dry             bool
+	nowarnings      bool
+	nolibraryhandle bool
 )
 
 /* Directives
@@ -32,6 +33,7 @@ func main() {
 	flag.StringVar(&functionName, "function-name", "init", "The name given to the function loading all the symbols")
 	flag.BoolVar(&dry, "dry", false, "Outputs the generated code to stdout instead of a file")
 	flag.BoolVar(&nowarnings, "no-warnings", false, "Prevent printing warnings to sderr")
+	flag.BoolVar(&nolibraryhandle, "no-library-handle", false, "The library handle will not be defined in the generated file")
 	flag.Parse()
 
 	if inputfile == "" {
@@ -63,8 +65,9 @@ func main() {
 	}
 	// Generate output file
 	files, err := g.Generate(&GenerateOptions{
-		OpenLibrary:  openLibrary,
-		FunctionName: functionName,
+		OpenLibrary:   openLibrary,
+		FunctionName:  functionName,
+		LibraryHandle: !nolibraryhandle,
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
