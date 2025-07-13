@@ -1,7 +1,9 @@
 package main
 
+import "github.com/Zyko0/purego-gen/internal"
+
 type Library struct {
-	PathByOS map[string]string
+	PathByOS *internal.OrderedMap[string, string]
 	Alias    string
 }
 

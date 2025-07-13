@@ -8,6 +8,8 @@ import (
 	"go/token"
 	"path/filepath"
 	"strings"
+
+	"github.com/Zyko0/purego-gen/internal"
 )
 
 type Type string
@@ -349,13 +351,13 @@ func (p *Parser) parseDirective(c *ast.Comment) {
 			if !ok {
 				l = &Library{
 					Alias:    alias,
-					PathByOS: map[string]string{},
+					PathByOS: internal.NewOrderedMap[string, string](),
 				}
 				p.libraries[alias] = l
 			}
 			// Update the paths by os
 			for platform, pt := range paths {
-				l.PathByOS[platform] = pt
+				l.PathByOS.Set(platform, pt)
 			}
 			// Activate the current library
 			p.state.CurrentLibrary = l

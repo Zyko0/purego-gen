@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Zyko0/purego-gen/internal"
 	"github.com/dave/jennifer/jen"
 )
 
@@ -21,13 +22,9 @@ type Generator struct {
 	funcs    []*Func
 	errors   []error
 
-	platforms        map[string]struct{}
-	symbolsByLibrary map[*Library][]string
+	platforms        *internal.OrderedMap[string, struct{}]
+	symbolsByLibrary *internal.OrderedMap[*Library, []string]
 	symbolByFunc     map[string]string
-}
-
-func argCallName(arg *FuncArg) string {
-	return "_" + arg.Name
 }
 
 func (g *Generator) appendArgsConv(codes []jen.Code, arg *FuncArg) []jen.Code {
@@ -197,8 +194,8 @@ func (g *Generator) Generate(opts *GenerateOptions) ([]*File, error) {
 	var files []*File
 	var usedPlatforms []string
 
-	g.platforms = map[string]struct{}{}
-	g.symbolsByLibrary = map[*Library][]string{}
+	g.platforms = internal.NewOrderedMap[string, struct{}]()
+	g.symbolsByLibrary = internal.NewOrderedMap[*Library, []string]()
 	g.symbolByFunc = map[string]string{}
 
 	// Initialize platforms, libraries and symbols
@@ -207,22 +204,20 @@ func (g *Generator) Generate(opts *GenerateOptions) ([]*File, error) {
 		if fn.NeedsRegisterFunc {
 			continue
 		}
-		if _, ok := g.symbolsByLibrary[fn.Library]; !ok {
-			g.symbolsByLibrary[fn.Library] = []string{fn.Symbol}
+		if symbols, ok := g.symbolsByLibrary.Get(fn.Library); !ok {
+			g.symbolsByLibrary.Set(fn.Library, []string{fn.Symbol})
 		} else {
-			g.symbolsByLibrary[fn.Library] = append(
-				g.symbolsByLibrary[fn.Library], fn.Symbol,
-			)
+			g.symbolsByLibrary.Set(fn.Library, append(symbols, fn.Symbol))
 		}
 		g.symbolByFunc[fn.Name] = fn.Symbol
-		for platform := range fn.Library.PathByOS {
-			g.platforms[platform] = struct{}{}
+		for platform := range fn.Library.PathByOS.All() {
+			g.platforms.Set(platform, struct{}{})
 		}
 	}
-	if len(g.platforms) == 0 {
+	if g.platforms.Len() == 0 {
 		return nil, fmt.Errorf("generate: no OS specified")
 	}
-	for p := range g.platforms {
+	for p := range g.platforms.All() {
 		usedPlatforms = append(usedPlatforms, p)
 	}
 
@@ -248,15 +243,16 @@ func (g *Generator) Generate(opts *GenerateOptions) ([]*File, error) {
 
 	// Library handles
 	initBody.Add(jen.Var().Err().Error())
-	for l, symbols := range g.symbolsByLibrary {
+	for l, symbols := range g.symbolsByLibrary.All() {
 		if openLibrary {
 			initBody.Add(jen.Var().Id("path").String()).Line()
 			initBody.Comment(l.Alias)
 			initBody.Add(jen.Switch(jen.Qual("runtime", "GOOS")).Block(
 				*jen.Do(func(cases *jen.Statement) {
-					for p := range g.platforms {
+					for p := range g.platforms.All() {
+						path, _ := l.PathByOS.Get(p)
 						cases.Add(jen.Case(jen.Id("\"" + p + "\"")).
-							Id("path").Op("=").Id("\"" + l.PathByOS[p] + "\""),
+							Id("path").Op("=").Id("\"" + path + "\""),
 						)
 					}
 					cases.Add(jen.Default().Add(
@@ -298,14 +294,14 @@ func (g *Generator) Generate(opts *GenerateOptions) ([]*File, error) {
 		if opts.LibraryHandle {
 			grp.Comment("Library handles")
 			grp.Do(func(s *jen.Statement) {
-				for l := range g.symbolsByLibrary {
+				for l := range g.symbolsByLibrary.All() {
 					s.Id(libHndVarName(l.Alias)).Uintptr()
 				}
 			})
 		}
 		grp.Comment("Symbols")
 		grp.Do(func(s *jen.Statement) {
-			for l, symbols := range g.symbolsByLibrary {
+			for l, symbols := range g.symbolsByLibrary.All() {
 				s.Comment(l.Alias).Line()
 				for _, symbol := range symbols {
 					s.Id(symbolVarName(symbol)).Uintptr().Line()
