@@ -120,7 +120,7 @@ func (g *Generator) appendRetsConv(codes []jen.Code, ret *FuncArg) ([]jen.Code, 
 			),
 		)
 	case "bool":
-		codes = append(codes, stmt.Id(ret.Name).Op("!=").Id("0"))
+		codes = append(codes, stmt.Id("uint8").Parens(jen.Id(ret.Name)).Op("!=").Id("0"))
 	case "[]T", "[N]T":
 		codes = append(codes, stmt.Uintptr().Parens(
 			jen.Qual("unsafe", "Pointer").Parens(
