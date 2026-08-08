@@ -299,7 +299,7 @@ func (p *Parser) parseDirective(c *ast.Comment) {
 				return
 			}
 			var alias string
-			paths := map[string]string{}
+			paths := internal.NewOrderedMap[string, string]()
 			for _, arg := range args[1:] {
 				kv := strings.Split(arg, "=")
 				if len(kv) <= 1 {
@@ -315,7 +315,7 @@ func (p *Parser) parseDirective(c *ast.Comment) {
 					}
 					if len(kargs) > 1 {
 						// Set the path for a specific OS
-						paths[strings.TrimSpace(kargs[1])] = kv[1]
+						paths.Set(strings.TrimSpace(kargs[1]), kv[1])
 						if kv[1] == "" {
 							p.errors = append(p.errors, p.error(c, "'path' must not be empty for 'library' directive"))
 							return
@@ -323,7 +323,7 @@ func (p *Parser) parseDirective(c *ast.Comment) {
 					} else {
 						// If no OS specified set it for all OS
 						for _, platform := range existingPlatforms {
-							paths[platform] = kv[1]
+							paths.Set(platform, kv[1])
 						}
 					}
 				case kv[0] == "alias":
@@ -337,7 +337,7 @@ func (p *Parser) parseDirective(c *ast.Comment) {
 			if alias == "" {
 				// Build an alias based on the file name
 				var path string
-				for _, pt := range paths {
+				for _, pt := range paths.All() {
 					if pt != "" {
 						path = pt
 						break
@@ -356,7 +356,7 @@ func (p *Parser) parseDirective(c *ast.Comment) {
 				p.libraries[alias] = l
 			}
 			// Update the paths by os
-			for platform, pt := range paths {
+			for platform, pt := range paths.All() {
 				l.PathByOS.Set(platform, pt)
 			}
 			// Activate the current library
