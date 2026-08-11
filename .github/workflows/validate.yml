@@ -1,0 +1,23 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  example:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Generate example
+        run: go run ./cmd/purego-gen --input ./examples/functions.go
+      - name: Verify no changes
+        run: git diff --exit-code
+      - name: Build
+        run: go build ./...
+      - name: Vet
+        run: go vet ./...

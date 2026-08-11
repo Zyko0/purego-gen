@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/Zyko0/purego-gen/internal"
@@ -368,7 +369,7 @@ func (g *Generator) Generate(opts *GenerateOptions) ([]*File, error) {
 		outValues := [3]string{"_", "_", "_"}
 		if len(fn.ReturnArgs) > 0 {
 			for i, a := range fn.ReturnArgs {
-				outValues[i] = "_r" + string('0'+i)
+				outValues[i] = "_r" + strconv.Itoa(i)
 				var typ *jen.Statement
 				if strings.Contains(a.OrigType, ".") {
 					var prefix string
